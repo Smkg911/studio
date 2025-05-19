@@ -1,3 +1,4 @@
+
 export interface Transaction {
   id: string;
   date: string;
@@ -7,11 +8,12 @@ export interface Transaction {
 }
 
 export interface User {
-  id: string;
+  id: string; // This will be the Firestore document ID
   username: string;
   accountNumber: string;
   balance: number;
   transactions: Transaction[];
+  // password_mock?: string; // Only for Firestore, not for client-side User state
 }
 
 // For AI flow, transactions need description and amount

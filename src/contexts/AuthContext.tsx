@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User, Transaction, AITransaction } from '@/types';
@@ -5,7 +6,8 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { analyzeTransactions, AnalyzeTransactionsInput } from '@/ai/flows/analyze-transactions';
-
+import { db } from '@/lib/firebase'; // Import Firestore instance
+import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -32,78 +34,113 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('bankmt-user');
+    const storedUser = localStorage.getItem('bankmt-user-cache');
     if (storedUser) {
-      const parsedUser: User = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setIsAuthenticated(true);
+      try {
+        const parsedUser: User = JSON.parse(storedUser);
+        // Optionally, re-verify with Firestore or Firebase Auth here for session validity
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Failed to parse cached user:", error);
+        localStorage.removeItem('bankmt-user-cache');
+      }
     }
   }, []);
 
-  const persistUser = (currentUser: User | null) => {
+  const persistUserToCache = (currentUser: User | null) => {
     if (currentUser) {
-      localStorage.setItem('bankmt-user', JSON.stringify(currentUser));
+      localStorage.setItem('bankmt-user-cache', JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem('bankmt-user');
+      localStorage.removeItem('bankmt-user-cache');
     }
   };
 
   const login = async (username: string, pass: string): Promise<boolean> => {
-    // In a real app, this would involve an API call and password hashing/comparison
-    const storedUsersData = localStorage.getItem('bankmt-users');
-    if (storedUsersData) {
-      const users: Record<string, string> = JSON.parse(storedUsersData);
-      // IMPORTANT: This is a mock password check. DO NOT USE IN PRODUCTION.
-      if (users[username] === pass) { // Simulate password check
-        const storedUser = localStorage.getItem(`bankmt-user-${username}`);
-        if(storedUser) {
-          const loggedInUser: User = JSON.parse(storedUser);
-          setUser(loggedInUser);
-          setIsAuthenticated(true);
-          persistUser(loggedInUser);
-          toast({ title: "Login Successful", description: `Welcome back, ${username}!` });
-          router.push('/dashboard');
-          return true;
-        }
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("username", "==", username));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({ title: "Login Failed", description: "User not found.", variant: "destructive" });
+        return false;
       }
+
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data() as User & { password_mock: string }; // Assuming password_mock field for prototype
+
+      // IMPORTANT: This is a mock password check. DO NOT USE IN PRODUCTION. Use Firebase Authentication.
+      if (userData.password_mock === pass) {
+        const loggedInUser: User = {
+            id: userDoc.id,
+            username: userData.username,
+            accountNumber: userData.accountNumber,
+            balance: userData.balance,
+            transactions: userData.transactions || [],
+        };
+        setUser(loggedInUser);
+        setIsAuthenticated(true);
+        persistUserToCache(loggedInUser);
+        toast({ title: "Login Successful", description: `Welcome back, ${username}!` });
+        router.push('/dashboard');
+        return true;
+      } else {
+        toast({ title: "Login Failed", description: "Invalid password.", variant: "destructive" });
+        return false;
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({ title: "Login Error", description: "An unexpected error occurred.", variant: "destructive" });
+      return false;
     }
-    toast({ title: "Login Failed", description: "Invalid username or password.", variant: "destructive" });
-    return false;
   };
 
   const register = async (username: string, pass: string): Promise<boolean> => {
-    const storedUsersData = localStorage.getItem('bankmt-users');
-    let users: Record<string, string> = storedUsersData ? JSON.parse(storedUsersData) : {};
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("username", "==", username));
+      const querySnapshot = await getDocs(q);
 
-    if (users[username]) {
-      toast({ title: "Registration Failed", description: "Username already exists.", variant: "destructive" });
+      if (!querySnapshot.empty) {
+        toast({ title: "Registration Failed", description: "Username already exists.", variant: "destructive" });
+        return false;
+      }
+
+      const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const newUser: User & { password_mock: string } = {
+        id: userId,
+        username,
+        accountNumber: generateAccountNumber(),
+        balance: 1000, // Initial balance
+        transactions: [],
+        password_mock: pass, // IMPORTANT: Storing plain text password for mock. DO NOT USE IN PRODUCTION.
+      };
+      
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, newUser);
+
+      const registeredUser: User = { ...newUser };
+      // @ts-ignore
+      delete registeredUser.password_mock; // Don't keep password in client-side state
+
+      setUser(registeredUser);
+      setIsAuthenticated(true);
+      persistUserToCache(registeredUser);
+      toast({ title: "Registration Successful", description: `Welcome, ${username}! Your account is ready.` });
+      router.push('/dashboard');
+      return true;
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({ title: "Registration Error", description: "An unexpected error occurred during registration.", variant: "destructive" });
       return false;
     }
-
-    // IMPORTANT: Storing plain text password for mock. DO NOT USE IN PRODUCTION.
-    users[username] = pass;
-    localStorage.setItem('bankmt-users', JSON.stringify(users));
-
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      username,
-      accountNumber: generateAccountNumber(),
-      balance: 1000, // Initial balance
-      transactions: [],
-    };
-    setUser(newUser);
-    setIsAuthenticated(true);
-    localStorage.setItem(`bankmt-user-${username}`, JSON.stringify(newUser)); // Store individual user data
-    persistUser(newUser); // Set as current user
-    toast({ title: "Registration Successful", description: `Welcome, ${username}! Your account is ready.` });
-    router.push('/dashboard');
-    return true;
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    persistUser(null);
+    persistUserToCache(null);
     router.push('/login');
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
   };
@@ -137,16 +174,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       type,
     };
 
-    const updatedUser = {
+    const updatedTransactions = [newTransaction, ...user.transactions];
+    const updatedUser: User = {
       ...user,
       balance: newBalance,
-      transactions: [newTransaction, ...user.transactions],
+      transactions: updatedTransactions,
     };
-    setUser(updatedUser);
-    persistUser(updatedUser);
-    localStorage.setItem(`bankmt-user-${user.username}`, JSON.stringify(updatedUser)); // Update specific user storage
-    toast({ title: "Transaction Successful", description: `${type === 'deposit' ? 'Deposited' : 'Withdrew'} $${amount.toFixed(2)}.` });
-    return true;
+
+    try {
+      const userRef = doc(db, "users", user.id);
+      await updateDoc(userRef, {
+        balance: newBalance,
+        transactions: updatedTransactions,
+      });
+      setUser(updatedUser);
+      persistUserToCache(updatedUser);
+      toast({ title: "Transaction Successful", description: `${type === 'deposit' ? 'Deposited' : 'Withdrew'} $${amount.toFixed(2)}.` });
+      return true;
+    } catch (error) {
+      console.error("Transaction error:", error);
+      toast({ title: "Transaction Error", description: "Failed to save transaction.", variant: "destructive" });
+      // Revert local state if Firestore update fails (optional, for consistency)
+      // setUser(user); 
+      return false;
+    }
   };
 
   const getFinancialAdvice = async (): Promise<string | null> => {
