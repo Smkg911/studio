@@ -4,12 +4,12 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 // import { getAuth } from 'firebase/auth'; // You would add this for Firebase Authentication
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyABbY7Nprd6ApVXzIfkaSGvgzV1gKPCqxs",
+  authDomain: "bankmt.firebaseapp.com",
+  projectId: "bankmt",
+  storageBucket: "bankmt.firebasestorage.app",
+  messagingSenderId: "1022213048387",
+  appId: "1:1022213048387:web:23edbcdb75df4cbac9acf6"
 };
 
 // Initialize Firebase
