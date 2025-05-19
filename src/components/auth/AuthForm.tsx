@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -103,7 +104,7 @@ export function AuthForm({ mode, onSubmit }: AuthFormProps) {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  {...register('confirmPassword' as any)} // Type assertion for registerSchema
+                  {...register('confirmPassword')}
                   aria-invalid={errors.confirmPassword ? "true" : "false"}
                 />
                 <Button

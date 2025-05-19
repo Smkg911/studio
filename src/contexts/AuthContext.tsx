@@ -72,12 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // IMPORTANT: This is a mock password check. DO NOT USE IN PRODUCTION. Use Firebase Authentication.
       if (userData.password_mock === pass) {
+        const { password_mock, ...loggedInUserBase } = userData;
         const loggedInUser: User = {
-            id: userDoc.id,
-            username: userData.username,
-            accountNumber: userData.accountNumber,
-            balance: userData.balance,
-            transactions: userData.transactions || [],
+            ...loggedInUserBase,
+            id: userDoc.id, // Ensure ID is from the doc, not from userData if it differs
+            transactions: userData.transactions || [], // Ensure transactions is an array
         };
         setUser(loggedInUser);
         setIsAuthenticated(true);
@@ -108,22 +107,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-      const newUser: User & { password_mock: string } = {
+      const newUserWithPassword: User & { password_mock: string } = {
         id: userId,
         username,
         accountNumber: generateAccountNumber(),
         balance: 1000, // Initial balance
-        transactions: [],
+        transactions: [], // Explicitly initialize transactions
         password_mock: pass, // IMPORTANT: Storing plain text password for mock. DO NOT USE IN PRODUCTION.
       };
       
       const userRef = doc(db, "users", userId);
-      await setDoc(userRef, newUser);
+      await setDoc(userRef, newUserWithPassword);
 
-      const registeredUser: User = { ...newUser };
-      // @ts-ignore
-      delete registeredUser.password_mock; // Don't keep password in client-side state
-
+      // Create a user object for client-side state without the password_mock
+      const { password_mock, ...registeredUser } = newUserWithPassword;
+      
       setUser(registeredUser);
       setIsAuthenticated(true);
       persistUserToCache(registeredUser);
@@ -174,7 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       type,
     };
 
-    const updatedTransactions = [newTransaction, ...user.transactions];
+    const updatedTransactions = [newTransaction, ...(user.transactions || [])]; // Ensure user.transactions is an array
     const updatedUser: User = {
       ...user,
       balance: newBalance,
@@ -201,7 +199,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getFinancialAdvice = async (): Promise<string | null> => {
-    if (!user || user.transactions.length === 0) {
+    if (!user || !user.transactions || user.transactions.length === 0) {
       toast({ title: "Not Enough Data", description: "Make some transactions to get financial advice.", variant: "destructive" });
       return null;
     }
