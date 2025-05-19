@@ -2,6 +2,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   output: 'export', // Added for static export
+  basePath: '/studio', // Added for GitHub Pages subpath
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
