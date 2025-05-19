@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, UserCircle } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Logo } from './Logo';
 import {
   DropdownMenu,
@@ -27,7 +28,8 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://placehold.co/40x40.png?text=${user.username.charAt(0).toUpperCase()}`} alt={user.username} data-ai-hint="profile avatar" />
+                    {/* Updated placeholder URL and added data-ai-hint */}
+                    <AvatarImage src="https://placehold.co/40x40.png" alt={user.username} data-ai-hint="profile avatar" />
                     <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
