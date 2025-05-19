@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a BankMT</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: hsl(210, 29%, 97%); /* --background from your globals.css */
+            color: hsl(220, 13%, 23%); /* --foreground from your globals.css */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .container {
+            background-color: #ffffff; /* --card from your globals.css */
+            padding: 30px 40px;
+            border-radius: 0.5rem; /* --radius from your globals.css */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo {
+            font-size: 2rem; 
+            font-weight: bold;
+            color: hsl(231, 48%, 48%); /* --primary from your globals.css */
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: hsl(231, 48%, 48%); /* --primary from your globals.css */
+            font-size: 1.875rem; 
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            font-size: 1rem; 
+            color: hsl(215, 14%, 45%); /* --muted-foreground from your globals.css */
+            margin-bottom: 1.5rem; 
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            color: #ffffff; /* --primary-foreground from your globals.css */
+            background-color: hsl(231, 48%, 48%); /* --primary from your globals.css */
+            border: none;
+            border-radius: 0.375rem; 
+            text-decoration: none;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: hsl(231, 48%, 40%); 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span>🏦 BankMT</span>
+        </div>
+        <h1>Bienvenido a BankMT</h1>
+        <p>Tu solución de banca online segura e intuitiva. Procede a iniciar sesión o registrarte.</p>
+        <a href="/login" class="button">Iniciar Sesión / Empezar</a>
+    </div>
+</body>
+</html>
